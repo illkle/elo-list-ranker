@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+:root {
+  --bg: #f4f4f4;
+  --fg: #050505;
+  --border: #050505;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #050505;
+    --fg: #f4f4f4;
+    --border: #f4f4f4;
+  }
+}
+
+@theme inline {
+  --bg: var(--bg);
+  --fg: var(--fg);
+  --border: var(--border);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+}
