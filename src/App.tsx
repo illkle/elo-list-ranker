@@ -1,3 +1,4 @@
+import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react';
 import { ListInput } from './components/ListInput';
 import { Matchup } from './components/Matchup';
 import { ProgressMeter } from './components/ProgressMeter';
@@ -26,80 +27,78 @@ export const App = () => {
   } = useListRanking();
 
   return (
-    <div className="min-h-screen p-6 md:p-8">
-      <header className="mb-8 flex items-center justify-between">
-        <h1
-          onClick={handleReset}
-          className="text-2xl text-bg md:text-4xl font-bold uppercase tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
-        >
-          Elo List Ranker
-        </h1>
-        {isOnList && (
-          <button
+    <div className="min-h-screen p-6 md:p-8 bg-stone-100 dark:bg-stone-950 text-stone-950 dark:text-stone-100">
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8 flex items-center justify-between">
+          <h1
             onClick={handleReset}
-            className="px-4 py-2 text-sm font-bold uppercase tracking-wide hover:bg-(--fg) hover:text-(--bg)"
+            className="text-2xl md:text-4xl font-bold uppercase tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
           >
-            Back
-          </button>
-        )}
-      </header>
+            Elo List Ranker
+          </h1>
+        </header>
 
-      {!isOnList && (
-        <div className="max-w-2xl mx-auto">
-          <ListInput onSubmit={handleStartRanking} />
-          <SavedLists
-            lists={savedLists}
-            onResume={handleResumeList}
-            onDelete={handleDeleteList}
-          />
-        </div>
-      )}
-
-      {isOnList && (
-        <div className="grid lg:grid-cols-[1fr,320px] gap-6">
-          <div className="space-y-6">
-            <ProgressMeter completed={completedPairsCount} total={totalPairs} />
-
-            {currentPair ? (
-              <Matchup
-                itemA={currentPair[0]}
-                itemB={currentPair[1]}
-                onSelect={handleSelect}
-              />
-            ) : (
-              <div className="border-(--border) border-2 p-8 text-center">
-                <p className="text-xl font-bold mb-4">All pairs compared!</p>
-                <p className="mono text-sm opacity-60">
-                  Export your ranked list below
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={handleResetAllScores}
-              className="px-4 py-2 text-sm font-bold uppercase tracking-wide border-(--border) border-2 hover:bg-(--fg) hover:text-(--bg)"
-            >
-              Reset All Scores
-            </button>
-          </div>
-
-          <aside className="space-y-6">
-            <RankedList
-              items={items}
-              onDeleteItem={handleDeleteItem}
-              onResetItemElo={handleResetItemElo}
+        {!isOnList && (
+          <div className="mx-auto">
+            <ListInput onSubmit={handleStartRanking} />
+            <SavedLists
+              lists={savedLists}
+              onResume={handleResumeList}
+              onDelete={handleDeleteList}
             />
-            <ExportButton items={items} />
-            <div className="border-(--border) border-2 p-4">
+          </div>
+        )}
+
+        {isOnList && (
+          <div className="grid lg:grid-cols-[1fr,320px] gap-6">
+            <div className="space-y-6">
+              <div className="flex  justify-between gap-4">
+                <ProgressMeter
+                  completed={completedPairsCount}
+                  total={totalPairs}
+                  className="w-full"
+                />
+                <button
+                  onClick={handleResetAllScores}
+                  className="px-4 py-2 text-sm font-bold uppercase tracking-wide border-stone-950 dark:border-stone-100 border-2 hover:bg-stone-950 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-950 flex items-center gap-2"
+                >
+                  <ArrowCounterClockwiseIcon size={16} weight="bold" />
+                  Reset
+                </button>
+              </div>
+
+              {currentPair ? (
+                <Matchup
+                  itemA={currentPair[0]}
+                  itemB={currentPair[1]}
+                  onSelect={handleSelect}
+                />
+              ) : (
+                <div className="border-stone-950 dark:border-stone-100 border-2 p-8 text-center">
+                  <p className="text-xl font-bold mb-4">All pairs compared!</p>
+                  <p className="font-mono text-sm opacity-60">
+                    Export your ranked list below
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <aside className="space-y-6">
+              <RankedList
+                items={items}
+                onDeleteItem={handleDeleteItem}
+                onResetItemElo={handleResetItemElo}
+              />
+              <ExportButton items={items} />
               <ListInput
                 onSubmit={handleAddItems}
                 existingNames={items.map((i) => i.name)}
                 mode="merge"
               />
-            </div>
-          </aside>
-        </div>
-      )}
+            </aside>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

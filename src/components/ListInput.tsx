@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRightIcon, PlusIcon } from '@phosphor-icons/react';
 
 interface ListInputProps {
   onSubmit: (items: string[]) => void;
@@ -66,7 +67,7 @@ export const ListInput = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={'- Item one\n- Item two\n...'}
-          className={`w-full p-3 bg-(--bg) text-(--fg) border-(--border) border-2 mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-(--fg) ${
+          className={`w-full p-3 bg-stone-100 dark:bg-stone-950 text-stone-950 dark:text-stone-100 border-stone-950 dark:border-stone-100 border-2 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-stone-950 dark:focus:ring-stone-100 ${
             isCompact ? 'h-32' : 'h-64'
           }`}
         />
@@ -74,11 +75,11 @@ export const ListInput = ({
 
       <div
         className={`flex items-center ${
-          isCompact ? 'flex-col gap-2' : 'justify-between'
+          isCompact ? 'flex-col gap-1' : 'justify-between'
         }`}
       >
-        <div className="mono text-xs">
-          <span>
+        <div className="font-mono text-xs">
+          <span className="text-stone-600">
             {parsedItems.length} item{parsedItems.length !== 1 ? 's' : ''}
           </span>
           {duplicatesFiltered > 0 && (
@@ -86,22 +87,31 @@ export const ListInput = ({
               ({duplicatesFiltered} dup{duplicatesFiltered !== 1 ? 's' : ''})
             </span>
           )}
+
+          {mode === 'create' && parsedItems.length < 2 && (
+            <span className="ml-2">Add at least 2 items to compare</span>
+          )}
         </div>
 
         <button
           onClick={handleSubmit}
           disabled={!isValid}
-          className={`bg-(--fg) text-(--bg) font-bold uppercase tracking-wide border-(--border) border-2 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80 active:opacity-60 ${
+          className={`bg-stone-950 dark:bg-stone-100 text-stone-100 dark:text-stone-950 font-bold uppercase tracking-wide border-stone-950 dark:border-stone-100 border-2 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80 active:opacity-60 flex items-center justify-center gap-2 ${
             isCompact ? 'w-full px-4 py-2 text-sm' : 'px-8 py-3'
           }`}
         >
-          {mode === 'merge' ? 'Add Items' : 'Start Ranking'}
+          {mode === 'merge' ? (
+            <>
+              <PlusIcon size={18} weight="bold" />
+              Add Items
+            </>
+          ) : (
+            <>
+              Start Ranking <ArrowRightIcon size={16} weight="bold" />
+            </>
+          )}
         </button>
       </div>
-
-      {mode === 'create' && parsedItems.length === 1 && (
-        <p className="mt-4 mono text-sm">Need at least 2 items to compare</p>
-      )}
     </div>
   );
 };

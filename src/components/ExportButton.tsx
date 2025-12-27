@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CheckIcon, ClipboardIcon } from '@phosphor-icons/react';
 import type { Item } from '../types';
 
 interface ExportButtonProps {
@@ -37,9 +38,19 @@ export const ExportButton = ({ items }: ExportButtonProps) => {
   return (
     <button
       onClick={handleExport}
-      className="w-full px-6 py-3 border-(--border) border-2 bg-(--fg) text-(--bg) font-bold uppercase tracking-wide hover:opacity-80 active:opacity-60"
+      className="w-full px-6 py-3 border-stone-950 dark:border-stone-100 border-2 bg-stone-950 dark:bg-stone-100 text-stone-100 dark:text-stone-950 font-bold uppercase tracking-wide hover:opacity-80 active:opacity-60 flex items-center justify-center gap-2"
     >
-      {copied ? 'Copied!' : 'Export as Markdown'}
+      {copied ? (
+        <>
+          <CheckIcon size={18} weight="bold" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <ClipboardIcon size={18} weight="bold" />
+          Export as Markdown
+        </>
+      )}
     </button>
   );
 };
