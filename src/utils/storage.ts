@@ -9,12 +9,12 @@ let cachedData: string | null = null;
 export const getSavedLists = (): SavedList[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    
+
     // Return cached result if data hasn't changed
     if (data === cachedData && cachedLists !== null) {
       return cachedLists;
     }
-    
+
     cachedData = data;
     if (!data) {
       cachedLists = [];
@@ -56,4 +56,3 @@ export const deleteList = (id: string): void => {
   cachedData = newData;
   cachedLists = lists;
 };
-
