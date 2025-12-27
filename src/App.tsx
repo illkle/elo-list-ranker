@@ -192,6 +192,104 @@ export const App = () => {
     setSavedLists(getSavedLists());
   }, []);
 
+  const saveCurrentList = useCallback(
+    (updatedItems: Item[], updatedPairs: Set<string>) => {
+      if (currentListId) {
+        const list = getSavedLists().find((l) => l.id === currentListId);
+        if (list) {
+          saveList({
+            ...list,
+            items: updatedItems,
+            completedPairs: Array.from(updatedPairs),
+            updatedAt: Date.now(),
+          });
+          setSavedLists(getSavedLists());
+        }
+      }
+    },
+    [currentListId]
+  );
+
+  const handleAddItems = useCallback(
+    (newItemNames: string[]) => {
+      const newItems: Item[] = newItemNames.map((name, index) => ({
+        id: `item-${items.length + index}-${Date.now()}`,
+        name,
+        elo: INITIAL_ELO,
+      }));
+
+      const updatedItems = [...items, ...newItems];
+      setItems(updatedItems);
+
+      // Save and get next pair
+      saveCurrentList(updatedItems, completedPairs);
+      const nextPair = getNextPair(updatedItems, completedPairs);
+      setCurrentPair(nextPair);
+    },
+    [items, completedPairs, saveCurrentList]
+  );
+
+  const handleDeleteItem = useCallback(
+    (itemId: string) => {
+      if (items.length <= 2) return;
+
+      const updatedItems = items.filter((item) => item.id !== itemId);
+      setItems(updatedItems);
+
+      // Remove completed pairs that involve this item
+      const newCompletedPairs = new Set<string>();
+      completedPairs.forEach((pairKey) => {
+        if (!pairKey.includes(itemId)) {
+          newCompletedPairs.add(pairKey);
+        }
+      });
+      setCompletedPairs(newCompletedPairs);
+
+      saveCurrentList(updatedItems, newCompletedPairs);
+
+      // Get next pair
+      const nextPair = getNextPair(updatedItems, newCompletedPairs);
+      setCurrentPair(nextPair);
+    },
+    [items, completedPairs, saveCurrentList]
+  );
+
+  const handleResetItemElo = useCallback(
+    (itemId: string) => {
+      const updatedItems = items.map((item) =>
+        item.id === itemId ? { ...item, elo: INITIAL_ELO } : item
+      );
+      setItems(updatedItems);
+
+      // Remove completed pairs that involve this item so it can be re-compared
+      const newCompletedPairs = new Set<string>();
+      completedPairs.forEach((pairKey) => {
+        if (!pairKey.includes(itemId)) {
+          newCompletedPairs.add(pairKey);
+        }
+      });
+      setCompletedPairs(newCompletedPairs);
+
+      saveCurrentList(updatedItems, newCompletedPairs);
+
+      // Get next pair
+      const nextPair = getNextPair(updatedItems, newCompletedPairs);
+      setCurrentPair(nextPair);
+    },
+    [items, completedPairs, saveCurrentList]
+  );
+
+  const handleResetAllScores = useCallback(() => {
+    const updatedItems = items.map((item) => ({ ...item, elo: INITIAL_ELO }));
+    setItems(updatedItems);
+    setCompletedPairs(new Set());
+
+    saveCurrentList(updatedItems, new Set());
+
+    const nextPair = getNextPair(updatedItems, new Set());
+    setCurrentPair(nextPair);
+  }, [items, saveCurrentList]);
+
   const totalPairs = getTotalPairs(items.length);
 
   return (
@@ -240,11 +338,29 @@ export const App = () => {
                 </p>
               </div>
             )}
+
+            <button
+              onClick={handleResetAllScores}
+              className="px-4 py-2 text-sm font-bold uppercase tracking-wide border-(--border) border-2 hover:bg-(--fg) hover:text-(--bg)"
+            >
+              Reset All Scores
+            </button>
           </div>
 
           <aside className="space-y-6">
-            <RankedList items={items} />
+            <RankedList
+              items={items}
+              onDeleteItem={handleDeleteItem}
+              onResetItemElo={handleResetItemElo}
+            />
             <ExportButton items={items} />
+            <div className="border-(--border) border-2 p-4">
+              <ListInput
+                onSubmit={handleAddItems}
+                existingNames={items.map((i) => i.name)}
+                mode="merge"
+              />
+            </div>
           </aside>
         </div>
       )}
