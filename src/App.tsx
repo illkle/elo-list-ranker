@@ -1,4 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { parseAsString, useQueryState } from 'nuqs';
+import { nanoid } from 'nanoid';
 import { ListInput } from './components/ListInput';
 import { Matchup } from './components/Matchup';
 import { ProgressMeter } from './components/ProgressMeter';
@@ -7,7 +9,7 @@ import { ExportButton } from './components/ExportButton';
 import { SavedLists } from './components/SavedLists';
 import { updateRatings, INITIAL_ELO } from './utils/elo';
 import { getSavedLists, saveList, deleteList } from './utils/storage';
-import type { Item, AppPhase, SavedList } from './types';
+import type { Item, SavedList } from './types';
 
 /**
  * Generate a unique pair key (order-independent)
@@ -85,47 +87,83 @@ const getNextPair = (
 };
 
 export const App = () => {
-  const [phase, setPhase] = useState<AppPhase>('input');
-  const [items, setItems] = useState<Item[]>([]);
-  const [completedPairs, setCompletedPairs] = useState<Set<string>>(new Set());
-  const [currentPair, setCurrentPair] = useState<[Item, Item] | null>(null);
-  const [currentListId, setCurrentListId] = useState<string | null>(null);
+  const [listId, setListId] = useQueryState(
+    'list',
+    parseAsString.withOptions({ history: 'push' })
+  );
   const [savedLists, setSavedLists] = useState<SavedList[]>(getSavedLists);
+  const [currentPair, setCurrentPair] = useState<[Item, Item] | null>(null);
+  const prevListIdRef = useRef<string | null | undefined>(undefined);
 
-  const handleStartRanking = useCallback((itemNames: string[]) => {
-    const newItems: Item[] = itemNames.map((name, index) => ({
-      id: `item-${index}-${Date.now()}`,
-      name,
-      elo: INITIAL_ELO,
-    }));
+  // Derive current list data from storage
+  const currentList = useMemo(
+    () => (listId ? savedLists.find((l) => l.id === listId) : null),
+    [listId, savedLists]
+  );
+  const items = useMemo(() => currentList?.items ?? [], [currentList]);
+  const completedPairs = useMemo(
+    () => new Set(currentList?.completedPairs ?? []),
+    [currentList]
+  );
 
-    const listId = `list-${Date.now()}`;
-    const now = Date.now();
+  // Initialize current pair when listId changes (navigating to a list)
+  useEffect(() => {
+    if (prevListIdRef.current !== listId) {
+      prevListIdRef.current = listId;
+      if (listId) {
+        // Fetch fresh data from storage when navigating to a list
+        const freshList = getSavedLists().find((l) => l.id === listId);
+        if (freshList) {
+          const pairsSet = new Set(freshList.completedPairs);
+          const nextPair = getNextPair(freshList.items, pairsSet);
+          queueMicrotask(() => setCurrentPair(nextPair));
+        }
+      } else {
+        queueMicrotask(() => {
+          setCurrentPair(null);
+          setSavedLists(getSavedLists());
+        });
+      }
+    }
+  }, [listId]);
 
-    // Create and save the new list
-    const newList: SavedList = {
-      id: listId,
-      name: newItems[0]?.name || 'Untitled List',
-      items: newItems,
-      completedPairs: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    saveList(newList);
-    setSavedLists(getSavedLists());
+  const handleStartRanking = useCallback(
+    (itemNames: string[]) => {
+      const newItems: Item[] = itemNames.map((name) => ({
+        id: nanoid(),
+        name,
+        elo: INITIAL_ELO,
+      }));
 
-    setCurrentListId(listId);
-    setItems(newItems);
-    setCompletedPairs(new Set());
-    setPhase('comparing');
+      const newListId = nanoid();
+      const now = Date.now();
 
-    // Get first pair
-    const firstPair = getNextPair(newItems, new Set());
-    setCurrentPair(firstPair);
-  }, []);
+      // Create and save the new list
+      const newList: SavedList = {
+        id: newListId,
+        name: newItems[0]?.name || 'Untitled List',
+        items: newItems,
+        completedPairs: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      saveList(newList);
+      setSavedLists(getSavedLists());
+
+      // Set the first pair immediately
+      const firstPair = getNextPair(newItems, new Set());
+      setCurrentPair(firstPair);
+
+      // Navigate to the new list via URL
+      setListId(newListId);
+    },
+    [setListId]
+  );
 
   const handleSelect = useCallback(
     (winner: Item, loser: Item) => {
+      if (!listId || !currentList) return;
+
       // Update Elo ratings
       const [newWinnerElo, newLoserElo] = updateRatings(winner.elo, loser.elo);
 
@@ -134,107 +172,80 @@ export const App = () => {
         if (item.id === loser.id) return { ...item, elo: newLoserElo };
         return item;
       });
-      setItems(updatedItems);
 
       // Mark pair as completed
       const pairKey = getPairKey(winner.id, loser.id);
       const newCompletedPairs = new Set(completedPairs);
       newCompletedPairs.add(pairKey);
-      setCompletedPairs(newCompletedPairs);
 
-      // Auto-save progress
-      if (currentListId) {
-        const list = getSavedLists().find((l) => l.id === currentListId);
-        if (list) {
-          saveList({
-            ...list,
-            items: updatedItems,
-            completedPairs: Array.from(newCompletedPairs),
-            updatedAt: Date.now(),
-          });
-          setSavedLists(getSavedLists());
-        }
-      }
+      // Save to storage and update local state
+      const updatedList = {
+        ...currentList,
+        items: updatedItems,
+        completedPairs: Array.from(newCompletedPairs),
+        updatedAt: Date.now(),
+      };
+      saveList(updatedList);
+      setSavedLists(getSavedLists());
 
       // Get next pair
       const nextPair = getNextPair(updatedItems, newCompletedPairs);
       setCurrentPair(nextPair);
     },
-    [items, completedPairs, currentListId]
+    [items, completedPairs, listId, currentList]
   );
 
-  const handleResumeList = useCallback((listId: string) => {
-    const list = getSavedLists().find((l) => l.id === listId);
-    if (!list) return;
+  const handleResumeList = useCallback(
+    (id: string) => {
+      // Navigate to the list via URL
+      setListId(id);
+    },
+    [setListId]
+  );
 
-    const pairsSet = new Set(list.completedPairs);
-
-    setCurrentListId(listId);
-    setItems(list.items);
-    setCompletedPairs(pairsSet);
-    setPhase('comparing');
-
-    const nextPair = getNextPair(list.items, pairsSet);
-    setCurrentPair(nextPair);
-  }, []);
-
-  const handleDeleteList = useCallback((listId: string) => {
-    deleteList(listId);
+  const handleDeleteList = useCallback((id: string) => {
+    deleteList(id);
     setSavedLists(getSavedLists());
   }, []);
 
   const handleReset = useCallback(() => {
-    setPhase('input');
-    setItems([]);
-    setCompletedPairs(new Set());
-    setCurrentPair(null);
-    setCurrentListId(null);
-    setSavedLists(getSavedLists());
-  }, []);
-
-  const saveCurrentList = useCallback(
-    (updatedItems: Item[], updatedPairs: Set<string>) => {
-      if (currentListId) {
-        const list = getSavedLists().find((l) => l.id === currentListId);
-        if (list) {
-          saveList({
-            ...list,
-            items: updatedItems,
-            completedPairs: Array.from(updatedPairs),
-            updatedAt: Date.now(),
-          });
-          setSavedLists(getSavedLists());
-        }
-      }
-    },
-    [currentListId]
-  );
+    // Clear the URL to go back to main page
+    setListId(null);
+  }, [setListId]);
 
   const handleAddItems = useCallback(
     (newItemNames: string[]) => {
-      const newItems: Item[] = newItemNames.map((name, index) => ({
-        id: `item-${items.length + index}-${Date.now()}`,
+      if (!listId || !currentList) return;
+
+      const newItems: Item[] = newItemNames.map((name) => ({
+        id: nanoid(),
         name,
         elo: INITIAL_ELO,
       }));
 
       const updatedItems = [...items, ...newItems];
-      setItems(updatedItems);
 
-      // Save and get next pair
-      saveCurrentList(updatedItems, completedPairs);
+      // Save to storage
+      const updatedList = {
+        ...currentList,
+        items: updatedItems,
+        updatedAt: Date.now(),
+      };
+      saveList(updatedList);
+      setSavedLists(getSavedLists());
+
+      // Get next pair
       const nextPair = getNextPair(updatedItems, completedPairs);
       setCurrentPair(nextPair);
     },
-    [items, completedPairs, saveCurrentList]
+    [items, completedPairs, listId, currentList]
   );
 
   const handleDeleteItem = useCallback(
     (itemId: string) => {
-      if (items.length <= 2) return;
+      if (!listId || !currentList || items.length <= 2) return;
 
       const updatedItems = items.filter((item) => item.id !== itemId);
-      setItems(updatedItems);
 
       // Remove completed pairs that involve this item
       const newCompletedPairs = new Set<string>();
@@ -243,23 +254,31 @@ export const App = () => {
           newCompletedPairs.add(pairKey);
         }
       });
-      setCompletedPairs(newCompletedPairs);
 
-      saveCurrentList(updatedItems, newCompletedPairs);
+      // Save to storage
+      const updatedList = {
+        ...currentList,
+        items: updatedItems,
+        completedPairs: Array.from(newCompletedPairs),
+        updatedAt: Date.now(),
+      };
+      saveList(updatedList);
+      setSavedLists(getSavedLists());
 
       // Get next pair
       const nextPair = getNextPair(updatedItems, newCompletedPairs);
       setCurrentPair(nextPair);
     },
-    [items, completedPairs, saveCurrentList]
+    [items, completedPairs, listId, currentList]
   );
 
   const handleResetItemElo = useCallback(
     (itemId: string) => {
+      if (!listId || !currentList) return;
+
       const updatedItems = items.map((item) =>
         item.id === itemId ? { ...item, elo: INITIAL_ELO } : item
       );
-      setItems(updatedItems);
 
       // Remove completed pairs that involve this item so it can be re-compared
       const newCompletedPairs = new Set<string>();
@@ -268,37 +287,57 @@ export const App = () => {
           newCompletedPairs.add(pairKey);
         }
       });
-      setCompletedPairs(newCompletedPairs);
 
-      saveCurrentList(updatedItems, newCompletedPairs);
+      // Save to storage
+      const updatedList = {
+        ...currentList,
+        items: updatedItems,
+        completedPairs: Array.from(newCompletedPairs),
+        updatedAt: Date.now(),
+      };
+      saveList(updatedList);
+      setSavedLists(getSavedLists());
 
       // Get next pair
       const nextPair = getNextPair(updatedItems, newCompletedPairs);
       setCurrentPair(nextPair);
     },
-    [items, completedPairs, saveCurrentList]
+    [items, completedPairs, listId, currentList]
   );
 
   const handleResetAllScores = useCallback(() => {
+    if (!listId || !currentList) return;
+
     const updatedItems = items.map((item) => ({ ...item, elo: INITIAL_ELO }));
-    setItems(updatedItems);
-    setCompletedPairs(new Set());
 
-    saveCurrentList(updatedItems, new Set());
+    // Save to storage
+    const updatedList = {
+      ...currentList,
+      items: updatedItems,
+      completedPairs: [],
+      updatedAt: Date.now(),
+    };
+    saveList(updatedList);
+    setSavedLists(getSavedLists());
 
+    // Get first pair
     const nextPair = getNextPair(updatedItems, new Set());
     setCurrentPair(nextPair);
-  }, [items, saveCurrentList]);
+  }, [items, listId, currentList]);
 
   const totalPairs = getTotalPairs(items.length);
+  const isOnList = listId !== null;
 
   return (
     <div className="min-h-screen p-6 md:p-8">
       <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl text-bg md:text-4xl font-bold uppercase tracking-tight">
+        <h1
+          onClick={handleReset}
+          className="text-2xl text-bg md:text-4xl font-bold uppercase tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
+        >
           Elo List Ranker
         </h1>
-        {phase === 'comparing' && (
+        {isOnList && (
           <button
             onClick={handleReset}
             className="px-4 py-2 text-sm font-bold uppercase tracking-wide hover:bg-(--fg) hover:text-(--bg)"
@@ -308,7 +347,7 @@ export const App = () => {
         )}
       </header>
 
-      {phase === 'input' && (
+      {!isOnList && (
         <div className="max-w-2xl mx-auto">
           <ListInput onSubmit={handleStartRanking} />
           <SavedLists
@@ -319,7 +358,7 @@ export const App = () => {
         </div>
       )}
 
-      {phase === 'comparing' && (
+      {isOnList && (
         <div className="grid lg:grid-cols-[1fr,320px] gap-6">
           <div className="space-y-6">
             <ProgressMeter completed={completedPairs.size} total={totalPairs} />

@@ -13,5 +13,3 @@ export interface SavedList {
   updatedAt: number
 }
 
-export type AppPhase = 'input' | 'comparing'
-
