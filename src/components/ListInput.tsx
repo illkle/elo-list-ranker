@@ -31,7 +31,7 @@ export const ListInput = ({ onSubmit }: ListInputProps) => {
   const isValid = parsedItems.length >= 2;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div>
       <label className="block mb-4">
         <span className="text-lg font-bold uppercase tracking-wide block mb-2">
           Paste your list

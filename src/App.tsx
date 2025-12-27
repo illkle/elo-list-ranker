@@ -4,8 +4,10 @@ import { Matchup } from './components/Matchup';
 import { ProgressMeter } from './components/ProgressMeter';
 import { RankedList } from './components/RankedList';
 import { ExportButton } from './components/ExportButton';
+import { SavedLists } from './components/SavedLists';
 import { updateRatings, INITIAL_ELO } from './utils/elo';
-import type { Item, AppPhase } from './types';
+import { getSavedLists, saveList, deleteList } from './utils/storage';
+import type { Item, AppPhase, SavedList } from './types';
 
 /**
  * Generate a unique pair key (order-independent)
@@ -87,6 +89,8 @@ export const App = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [completedPairs, setCompletedPairs] = useState<Set<string>>(new Set());
   const [currentPair, setCurrentPair] = useState<[Item, Item] | null>(null);
+  const [currentListId, setCurrentListId] = useState<string | null>(null);
+  const [savedLists, setSavedLists] = useState<SavedList[]>(getSavedLists);
 
   const handleStartRanking = useCallback((itemNames: string[]) => {
     const newItems: Item[] = itemNames.map((name, index) => ({
@@ -95,6 +99,22 @@ export const App = () => {
       elo: INITIAL_ELO,
     }));
 
+    const listId = `list-${Date.now()}`;
+    const now = Date.now();
+
+    // Create and save the new list
+    const newList: SavedList = {
+      id: listId,
+      name: newItems[0]?.name || 'Untitled List',
+      items: newItems,
+      completedPairs: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    saveList(newList);
+    setSavedLists(getSavedLists());
+
+    setCurrentListId(listId);
     setItems(newItems);
     setCompletedPairs(new Set());
     setPhase('comparing');
@@ -109,13 +129,12 @@ export const App = () => {
       // Update Elo ratings
       const [newWinnerElo, newLoserElo] = updateRatings(winner.elo, loser.elo);
 
-      setItems((prevItems) =>
-        prevItems.map((item) => {
-          if (item.id === winner.id) return { ...item, elo: newWinnerElo };
-          if (item.id === loser.id) return { ...item, elo: newLoserElo };
-          return item;
-        })
-      );
+      const updatedItems = items.map((item) => {
+        if (item.id === winner.id) return { ...item, elo: newWinnerElo };
+        if (item.id === loser.id) return { ...item, elo: newLoserElo };
+        return item;
+      });
+      setItems(updatedItems);
 
       // Mark pair as completed
       const pairKey = getPairKey(winner.id, loser.id);
@@ -123,18 +142,54 @@ export const App = () => {
       newCompletedPairs.add(pairKey);
       setCompletedPairs(newCompletedPairs);
 
+      // Auto-save progress
+      if (currentListId) {
+        const list = getSavedLists().find((l) => l.id === currentListId);
+        if (list) {
+          saveList({
+            ...list,
+            items: updatedItems,
+            completedPairs: Array.from(newCompletedPairs),
+            updatedAt: Date.now(),
+          });
+          setSavedLists(getSavedLists());
+        }
+      }
+
       // Get next pair
-      const nextPair = getNextPair(items, newCompletedPairs);
+      const nextPair = getNextPair(updatedItems, newCompletedPairs);
       setCurrentPair(nextPair);
     },
-    [items, completedPairs]
+    [items, completedPairs, currentListId]
   );
+
+  const handleResumeList = useCallback((listId: string) => {
+    const list = getSavedLists().find((l) => l.id === listId);
+    if (!list) return;
+
+    const pairsSet = new Set(list.completedPairs);
+
+    setCurrentListId(listId);
+    setItems(list.items);
+    setCompletedPairs(pairsSet);
+    setPhase('comparing');
+
+    const nextPair = getNextPair(list.items, pairsSet);
+    setCurrentPair(nextPair);
+  }, []);
+
+  const handleDeleteList = useCallback((listId: string) => {
+    deleteList(listId);
+    setSavedLists(getSavedLists());
+  }, []);
 
   const handleReset = useCallback(() => {
     setPhase('input');
     setItems([]);
     setCompletedPairs(new Set());
     setCurrentPair(null);
+    setCurrentListId(null);
+    setSavedLists(getSavedLists());
   }, []);
 
   const totalPairs = getTotalPairs(items.length);
@@ -150,12 +205,21 @@ export const App = () => {
             onClick={handleReset}
             className="px-4 py-2 text-sm font-bold uppercase tracking-wide hover:bg-(--fg) hover:text-(--bg)"
           >
-            Reset
+            Back
           </button>
         )}
       </header>
 
-      {phase === 'input' && <ListInput onSubmit={handleStartRanking} />}
+      {phase === 'input' && (
+        <div className="max-w-2xl mx-auto">
+          <ListInput onSubmit={handleStartRanking} />
+          <SavedLists
+            lists={savedLists}
+            onResume={handleResumeList}
+            onDelete={handleDeleteList}
+          />
+        </div>
+      )}
 
       {phase === 'comparing' && (
         <div className="grid lg:grid-cols-[1fr,320px] gap-6">

@@ -4,5 +4,14 @@ export interface Item {
   elo: number
 }
 
+export interface SavedList {
+  id: string
+  name: string
+  items: Item[]
+  completedPairs: string[]
+  createdAt: number
+  updatedAt: number
+}
+
 export type AppPhase = 'input' | 'comparing'
 
