@@ -13,7 +13,7 @@ export const ProgressMeter = ({
 
   return (
     <div
-      className={`border-stone-950 dark:border-stone-100 border-2 p-4 ${className}`}
+      className={`border-border border-2 p-4 ${className}`}
     >
       <div className="flex justify-between items-center mb-2">
         <span className="font-bold uppercase tracking-wide text-sm">
@@ -24,9 +24,9 @@ export const ProgressMeter = ({
         </span>
       </div>
 
-      <div className="h-4 border-stone-950 dark:border-stone-100 border-2 bg-stone-100 dark:bg-stone-950">
+      <div className="h-4 border-border border-2 bg-background">
         <div
-          className="h-full bg-stone-950 dark:bg-stone-100 transition-all duration-150"
+          className="h-full bg-accent transition-all duration-150"
           style={{ width: `${percentage}%` }}
         />
       </div>

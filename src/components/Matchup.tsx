@@ -40,7 +40,7 @@ export const Matchup = ({ itemA, itemB, onSelect }: MatchupProps) => {
       <div className="grid grid-cols-2 gap-6">
         <button
           onClick={() => onSelect(itemA, itemB)}
-          className="p-8 border-stone-950 dark:border-stone-100 border-2 bg-stone-100 dark:bg-stone-950 text-stone-950 dark:text-stone-100 hover:bg-stone-950 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-950 active:opacity-80 transition-colors min-h-32 flex flex-col items-center justify-center gap-2"
+          className="p-8 border-border border-2 bg-background text-foreground hover:bg-accent hover:text-accent-foreground active:opacity-80 transition-colors min-h-32 flex flex-col items-center justify-center gap-2"
         >
           <div className="flex items-center gap-2 font-mono text-xs opacity-50">
             <span>[A / ←]</span>
@@ -52,7 +52,7 @@ export const Matchup = ({ itemA, itemB, onSelect }: MatchupProps) => {
 
         <button
           onClick={() => onSelect(itemB, itemA)}
-          className="p-8 border-stone-950 dark:border-stone-100 border-2 bg-stone-100 dark:bg-stone-950 text-stone-950 dark:text-stone-100 hover:bg-stone-950 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-950 active:opacity-80 transition-colors min-h-32 flex flex-col items-center justify-center gap-2"
+          className="p-8 border-border border-2 bg-background text-foreground hover:bg-accent hover:text-accent-foreground active:opacity-80 transition-colors min-h-32 flex flex-col items-center justify-center gap-2"
         >
           <div className="flex items-center gap-2 font-mono text-xs opacity-50">
             <span>[D / →]</span>

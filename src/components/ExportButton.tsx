@@ -38,7 +38,7 @@ export const ExportButton = ({ items }: ExportButtonProps) => {
   return (
     <button
       onClick={handleExport}
-      className="w-full px-6 py-3 border-stone-950 dark:border-stone-100 border-2 bg-stone-950 dark:bg-stone-100 text-stone-100 dark:text-stone-950 font-bold uppercase tracking-wide hover:opacity-80 active:opacity-60 flex items-center justify-center gap-2"
+      className="w-full px-6 py-3 border-border border-2 bg-accent text-accent-foreground font-bold uppercase tracking-wide hover:opacity-80 active:opacity-60 flex items-center justify-center gap-2"
     >
       {copied ? (
         <>
@@ -48,7 +48,7 @@ export const ExportButton = ({ items }: ExportButtonProps) => {
       ) : (
         <>
           <ClipboardIcon size={18} weight="bold" />
-          Export as Markdown
+          Copy as Markdown
         </>
       )}
     </button>

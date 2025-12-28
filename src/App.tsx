@@ -27,7 +27,7 @@ export const App = () => {
   } = useListRanking();
 
   return (
-    <div className="min-h-screen p-6 md:p-8 bg-stone-100 dark:bg-stone-950 text-stone-950 dark:text-stone-100">
+    <div className="min-h-screen p-6 md:p-8 bg-background text-foreground">
       <div className="max-w-4xl mx-auto">
         <header className="mb-8 flex items-center justify-between">
           <h1
@@ -60,7 +60,7 @@ export const App = () => {
                 />
                 <button
                   onClick={handleResetAllScores}
-                  className="px-4 py-2 text-sm font-bold uppercase tracking-wide border-stone-950 dark:border-stone-100 border-2 hover:bg-stone-950 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-950 flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-bold uppercase tracking-wide border-border border-2 hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
                 >
                   <ArrowCounterClockwiseIcon size={16} weight="bold" />
                   Reset
@@ -74,7 +74,7 @@ export const App = () => {
                   onSelect={handleSelect}
                 />
               ) : (
-                <div className="border-stone-950 dark:border-stone-100 border-2 p-8 text-center">
+                <div className="border-border border-2 p-8 text-center">
                   <p className="text-xl font-bold mb-4">All pairs compared!</p>
                   <p className="font-mono text-sm opacity-60">
                     Export your ranked list below

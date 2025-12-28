@@ -67,7 +67,7 @@ export const ListInput = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={'- Item one\n- Item two\n...'}
-          className={`w-full p-3 bg-stone-100 dark:bg-stone-950 text-stone-950 dark:text-stone-100 border-stone-950 dark:border-stone-100 border-2 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-stone-950 dark:focus:ring-stone-100 ${
+          className={`w-full p-3 bg-background text-foreground border-border border-2 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-border ${
             isCompact ? 'h-32' : 'h-64'
           }`}
         />
@@ -79,7 +79,7 @@ export const ListInput = ({
         }`}
       >
         <div className="font-mono text-xs">
-          <span className="text-stone-600">
+          <span className="text-muted">
             {parsedItems.length} item{parsedItems.length !== 1 ? 's' : ''}
           </span>
           {duplicatesFiltered > 0 && (
@@ -96,7 +96,7 @@ export const ListInput = ({
         <button
           onClick={handleSubmit}
           disabled={!isValid}
-          className={`bg-stone-950 dark:bg-stone-100 text-stone-100 dark:text-stone-950 font-bold uppercase tracking-wide border-stone-950 dark:border-stone-100 border-2 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80 active:opacity-60 flex items-center justify-center gap-2 ${
+          className={`bg-accent text-accent-foreground font-bold uppercase tracking-wide border-border border-2 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80 active:opacity-60 flex items-center justify-center gap-2 ${
             isCompact ? 'w-full px-4 py-2 text-sm' : 'px-8 py-3'
           }`}
         >

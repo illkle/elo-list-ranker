@@ -49,7 +49,7 @@ export const SavedLists = ({ lists, onResume, onDelete }: SavedListsProps) => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && onResume(list.id)}
-              className="w-full border-stone-950 dark:border-stone-100 border-2 p-4 flex items-center justify-between gap-4 group text-left cursor-pointer"
+              className="w-full border-border border-2 p-4 flex items-center justify-between gap-4 group text-left cursor-pointer"
             >
               <div className="flex-1 min-w-0">
                 <div className="font-bold truncate">{list.name}</div>
@@ -68,7 +68,7 @@ export const SavedLists = ({ lists, onResume, onDelete }: SavedListsProps) => {
                   e.stopPropagation();
                   onDelete(list.id);
                 }}
-                className="px-3 py-1 text-sm font-bold uppercase tracking-wide opacity-50 hover:opacity-100 hover:bg-stone-950 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-950 transition-opacity flex items-center gap-1.5"
+                className="px-3 py-1 text-sm font-bold uppercase tracking-wide opacity-50 hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity flex items-center gap-1.5"
                 title="Delete list"
               >
                 <TrashIcon size={14} weight="bold" />

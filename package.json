@@ -1,5 +1,5 @@
 {
-  "name": "elo-any-list",
+  "name": "elo-list-ranker",
   "private": true,
   "version": "0.0.0",
   "type": "module",
