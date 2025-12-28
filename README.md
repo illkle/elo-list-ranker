@@ -3,3 +3,5 @@
 3. Get sorted list via elo.
 
 90% vibecoded 😎🤙
+
+https://elolistranker.illkle.com/
